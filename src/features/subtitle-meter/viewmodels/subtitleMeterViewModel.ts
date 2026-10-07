@@ -94,9 +94,12 @@ export class SubtitleMeterViewModel {
     patch: Partial<Pick<SubtitleCue, "text" | "startMs" | "endMs">>,
   ) {
     if (!this.state.project) return;
-    const cues = this.state.project.cues.map((cue) =>
-      cue.id === id ? { ...cue, ...patch } : cue,
-    );
+    const cues = this.state.project.cues.map((cue) => {
+      if (cue.id !== id) return cue;
+      const next = { ...cue, ...patch };
+      if ("startMs" in patch || "endMs" in patch) delete next.anomalies;
+      return next;
+    });
     await this.commit({ ...this.state.project, cues });
   }
   async saveVersion() {

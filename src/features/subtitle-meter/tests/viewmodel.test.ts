@@ -39,7 +39,18 @@ describe("SubtitleMeterViewModel", () => {
     vi.mocked(readTextFile).mockResolvedValueOnce("not a subtitle block");
     await vm.importFile(new File(["x"], "clip.srt"));
     expect(vm.state.phase).toBe("error");
-    expect(vm.state.notice).toContain("缺少时间码");
+    expect(vm.state.notice).toContain("没有找到可用字幕条目");
+  });
+  it("imports entries with time anomalies and reports them in inspection", async () => {
+    vi.mocked(readTextFile).mockResolvedValueOnce(
+      "1\n00:00:01,000 --> 00:00:02,000\n正常\n\n2\n00:00:03,000 --> 00:00:03,000\n相同\n\n3\n00:00:04,500 --> 00:00:06,000\n结尾",
+    );
+    await vm.importFile(new File(["x"], "clip.srt"));
+    expect(vm.state.phase).toBe("ready");
+    expect(vm.state.project!.cues).toHaveLength(3);
+    const invalid = vm.state.issues.filter((i) => i.type === "invalid-time");
+    expect(invalid).toHaveLength(1);
+    expect(invalid[0].cueId).toBe(vm.state.project!.cues[1].id);
   });
   it("keeps editing visible immediately and reports export failures", async () => {
     await vm.importFile(new File(["x"], "clip.srt"));

@@ -29,4 +29,26 @@ describe("issue detection", () => {
       expect.arrayContaining(["empty", "too-short", "too-fast", "too-long"]),
     );
   });
+  it("reports equal and reversed timecodes as invalid-time", () => {
+    const issues = detectIssues([
+      cue("1", 1000, 1000, "相同"),
+      cue("2", 5000, 4000, "倒挂"),
+    ]);
+    const invalid = issues.filter((i) => i.type === "invalid-time");
+    expect(invalid).toHaveLength(2);
+    expect(invalid.map((i) => i.cueId)).toEqual(
+      expect.arrayContaining(["1", "2"]),
+    );
+  });
+  it("reports imported timecode anomalies with distinct results", () => {
+    const issues = detectIssues([
+      {
+        ...cue("1", 0, 75000, "换算"),
+        anomalies: ["out-of-range", "decimal-places"],
+      },
+    ]);
+    expect(issues.map((i) => i.type)).toEqual(
+      expect.arrayContaining(["out-of-range", "decimal-places"]),
+    );
+  });
 });

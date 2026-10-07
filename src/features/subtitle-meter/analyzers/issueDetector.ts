@@ -19,8 +19,10 @@ export function detectIssues(cues: SubtitleCue[]): SubtitleIssue[] {
     const duration = cue.endMs - cue.startMs,
       chars = [...cue.text.replace(/\s/g, "")].length;
     if (!cue.text.trim()) add(cue, "empty", "error", "字幕文本为空");
-    if (duration <= 0)
-      add(cue, "invalid-time", "error", "结束时间必须晚于开始时间");
+    if (duration < 0)
+      add(cue, "invalid-time", "error", "时间倒挂：结束时间早于开始时间");
+    else if (duration === 0)
+      add(cue, "invalid-time", "error", "开始和结束时间相同");
     else {
       if (duration < 800)
         add(
@@ -33,6 +35,10 @@ export function detectIssues(cues: SubtitleCue[]): SubtitleIssue[] {
       if (cps > 18)
         add(cue, "too-fast", "warning", `阅读速度 ${cps.toFixed(1)} 字/秒`);
     }
+    if (cue.anomalies?.includes("out-of-range"))
+      add(cue, "out-of-range", "warning", "时间码超出正常范围，已按进位换算");
+    if (cue.anomalies?.includes("decimal-places"))
+      add(cue, "decimal-places", "info", "时间码小数位异常，已截断为三位");
     if (chars > 42 || cue.text.split("\n").length > 2)
       add(
         cue,

@@ -1,16 +1,25 @@
-export function parseTimestamp(value: string): number {
-  const match = value.trim().match(/^(\d{2,}):(\d{2}):(\d{2})[,.](\d{1,3})$/);
-  if (!match) throw new Error(`无法解析时间码「${value}」`);
+import type { TimeAnomaly } from "../models";
+export interface ParsedTimecode {
+  ms: number;
+  anomalies: TimeAnomaly[];
+}
+export function parseTimecode(value: string): ParsedTimecode | null {
+  const match = value.trim().match(/^(?:(\d+):)?(\d{1,2}):(\d{1,2})[,.](\d+)$/);
+  if (!match) return null;
   const [, h, m, s, fraction] = match;
-  const hours = Number(h),
-    minutes = Number(m),
-    seconds = Number(s);
-  if (minutes > 59 || seconds > 59)
-    throw new Error(`时间码超出范围「${value}」`);
-  return (
-    ((hours * 60 + minutes) * 60 + seconds) * 1000 +
-    Number(fraction.padEnd(3, "0"))
-  );
+  const anomalies: TimeAnomaly[] = [];
+  if (Number(m) > 59 || Number(s) > 59) anomalies.push("out-of-range");
+  let millis = fraction;
+  if (fraction.length > 3) {
+    anomalies.push("decimal-places");
+    millis = fraction.slice(0, 3);
+  }
+  return {
+    ms:
+      ((Number(h ?? 0) * 60 + Number(m)) * 60 + Number(s)) * 1000 +
+      Number(millis.padEnd(3, "0")),
+    anomalies,
+  };
 }
 export function formatTimestamp(ms: number, format: "srt" | "vtt"): string {
   const safe = Math.max(0, Math.trunc(ms));

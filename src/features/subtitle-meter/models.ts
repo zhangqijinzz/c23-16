@@ -1,10 +1,12 @@
 export type Format = "srt" | "vtt";
+export type TimeAnomaly = "out-of-range" | "decimal-places";
 export interface SubtitleCue {
   id: string;
   index: number;
   startMs: number;
   endMs: number;
   text: string;
+  anomalies?: TimeAnomaly[];
 }
 export type IssueType =
   | "overlap"
@@ -12,7 +14,9 @@ export type IssueType =
   | "too-fast"
   | "too-long"
   | "empty"
-  | "invalid-time";
+  | "invalid-time"
+  | "out-of-range"
+  | "decimal-places";
 export interface SubtitleIssue {
   id: string;
   cueId: string;
