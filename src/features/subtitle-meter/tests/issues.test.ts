@@ -20,6 +20,15 @@ describe("issue detection", () => {
       ),
     ).toBe(true);
   });
+  it("flags zero and negative durations as invalid time", () => {
+    const issues = detectIssues([
+      cue("1", 1000, 1000, "起止相同"),
+      cue("2", 3000, 2000, "时间倒挂"),
+    ]);
+    expect(
+      issues.filter((i) => i.type === "invalid-time").map((i) => i.cueId),
+    ).toEqual(["1", "2"]);
+  });
   it("detects empty, short, fast, and long captions", () => {
     const issues = detectIssues([
       cue("1", 0, 100, ""),

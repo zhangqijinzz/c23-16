@@ -18,12 +18,15 @@ export function parseSubtitles(raw: string, format: Format): SubtitleCue[] {
       continue;
     if (/^(NOTE|STYLE|REGION)(\s|$)/.test(lines[0] ?? "")) continue;
     const timeIndex = lines.findIndex((line) => line.includes("-->"));
-    if (timeIndex < 0) throw new Error(`第 ${blockIndex + 1} 段缺少时间码`);
+    if (timeIndex < 0) continue;
     const [from, toWithSettings] = lines[timeIndex].split("-->");
-    const startMs = parseTimestamp(from),
+    let startMs: number, endMs: number;
+    try {
+      startMs = parseTimestamp(from);
       endMs = parseTimestamp(toWithSettings.trim().split(/\s+/)[0]);
-    if (endMs <= startMs)
-      throw new Error(`第 ${blockIndex + 1} 段结束时间必须晚于开始时间`);
+    } catch {
+      continue;
+    }
     cues.push({
       id: `cue-${cues.length + 1}`,
       index: cues.length + 1,
